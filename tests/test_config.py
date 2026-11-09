@@ -29,3 +29,17 @@ def test_partial_s3_credentials_are_rejected() -> None:
 def test_garage_bootstrap_limits_are_validated() -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None, garage_init_timeout_seconds=0)
+
+
+def test_database_password_can_be_loaded_from_a_file(tmp_path: Path) -> None:
+    password_file = tmp_path / "database-password"
+    password_file.write_text("file-secret\n", encoding="utf-8")
+    settings = Settings(
+        _env_file=None,
+        database_url="postgresql+asyncpg://youtube@postgres/youtube",
+        database_password_file=password_file,
+    )
+
+    assert settings.load_database_url() == (
+        "postgresql+asyncpg://youtube:file-secret@postgres/youtube"
+    )

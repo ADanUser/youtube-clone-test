@@ -39,6 +39,32 @@ uv run pytest
 
 S3-реквизиты можно задать парой переменных `YOUTUBE_S3_ACCESS_KEY_ID` и
 `YOUTUBE_S3_SECRET_ACCESS_KEY`, но в Compose они должны поступать через защищённые файлы,
-указанные в `YOUTUBE_S3_ACCESS_KEY_FILE` и `YOUTUBE_S3_SECRET_KEY_FILE`. Будущий
+указанные в `YOUTUBE_S3_ACCESS_KEY_FILE` и `YOUTUBE_S3_SECRET_KEY_FILE`. Контейнер
 `garage-init` использует настройки зоны, ёмкости, имени ключа, бакета и ограниченного
 таймаута из `.env.example`; ручные команды инициализации не входят в штатный запуск.
+
+## Docker Compose
+
+Для локального инфраструктурного запуска нужны Docker с Compose plugin и OpenSSL.
+Сначала создайте игнорируемые Git локальные секреты, затем поднимите стек:
+
+```bash
+scripts/prepare-runtime-secrets.sh
+docker compose up --build -d
+docker compose ps -a
+curl http://127.0.0.1:8080/healthz
+```
+
+Наружу публикуется только Nginx на порту `8080`. PostgreSQL, S3/RPC/admin Garage и
+приложение доступны только во внутренней Docker-сети. `garage-init` автоматически
+назначает и применяет односерверный layout, создаёт закрытый бакет и ключ только с
+read/write, сохраняет реквизиты в отдельный том и проверяет HEAD/PUT/GET/Range/DELETE.
+Повторный `docker compose up -d` перепроверяет фактическое состояние без смены ключа.
+
+Остановить контейнеры без потери данных:
+
+```bash
+docker compose down
+```
+
+Не добавляйте `-v`: эта опция удалит постоянные тома PostgreSQL, Garage и реквизитов.

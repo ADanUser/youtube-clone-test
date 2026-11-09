@@ -1,0 +1,4 @@
+services:
+  garage-init:
+    environment:
+      YOUTUBE_GARAGE_LAYOUT_CAPACITY_BYTES: "9999999999"

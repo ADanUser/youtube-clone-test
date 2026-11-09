@@ -14,4 +14,5 @@ dist/
 # Local runtime state and secrets
 data/
 secrets/
+.runtime/
 *.log

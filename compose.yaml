@@ -1,0 +1,174 @@
+name: youtube-copy
+
+x-app-environment: &app-environment
+  YOUTUBE_ENVIRONMENT: production
+  YOUTUBE_DEBUG: "false"
+  YOUTUBE_DATABASE_URL: postgresql+asyncpg://youtube@postgres:5432/youtube
+  YOUTUBE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  YOUTUBE_S3_ENDPOINT_URL: http://garage:3900
+  YOUTUBE_S3_REGION: garage
+  YOUTUBE_S3_BUCKET: videos
+  YOUTUBE_S3_ACCESS_KEY_FILE: /run/youtube-s3/access-key-id
+  YOUTUBE_S3_SECRET_KEY_FILE: /run/youtube-s3/secret-access-key
+
+x-app-base: &app-base
+  image: youtube-copy-app:local
+  restart: unless-stopped
+  environment: *app-environment
+  secrets:
+    - postgres_password
+  volumes:
+    - s3_credentials:/run/youtube-s3:ro
+  networks:
+    - backend
+
+services:
+  postgres:
+    image: postgres:18.1-bookworm@sha256:cc9f4143a8d2fa8cf3749d0cb4d26ecf2d53a77a2ac807e9ebd67ae22426221a
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: youtube
+      POSTGRES_USER: youtube
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youtube -d youtube"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - backend
+
+  garage:
+    image: dxflrs/garage:v2.5.0@sha256:677e5b758e4425a325b811c425c026bf35a4bf42f7ddbaa773de3f4fd779a5a5
+    restart: unless-stopped
+    command: ["/garage", "server"]
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage.toml
+      GARAGE_RPC_SECRET_FILE: /run/secrets/garage_rpc_secret
+      RUST_LOG: garage=info
+    secrets:
+      - garage_rpc_secret
+    volumes:
+      - ./infrastructure/garage/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    healthcheck:
+      test: ["CMD", "/garage", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    networks:
+      - backend
+
+  garage-init:
+    build:
+      context: .
+      target: garage-init
+    image: youtube-copy-garage-init:local
+    restart: "no"
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage.toml
+      GARAGE_RPC_SECRET_FILE: /run/secrets/garage_rpc_secret
+      YOUTUBE_S3_ENDPOINT_URL: http://garage:3900
+      YOUTUBE_S3_REGION: garage
+      YOUTUBE_S3_BUCKET: videos
+      YOUTUBE_S3_ACCESS_KEY_FILE: /run/youtube-s3/access-key-id
+      YOUTUBE_S3_SECRET_KEY_FILE: /run/youtube-s3/secret-access-key
+      YOUTUBE_GARAGE_LAYOUT_ZONE: local
+      YOUTUBE_GARAGE_LAYOUT_CAPACITY_BYTES: "10000000000"
+      YOUTUBE_GARAGE_APP_KEY_NAME: youtube-app
+      YOUTUBE_GARAGE_INIT_TIMEOUT_SECONDS: "180"
+      YOUTUBE_GARAGE_INIT_POLL_SECONDS: "5"
+    secrets:
+      - garage_rpc_secret
+    volumes:
+      - ./infrastructure/garage/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta:ro
+      - s3_credentials:/run/youtube-s3
+    depends_on:
+      garage:
+        condition: service_started
+    networks:
+      - backend
+
+  migrate:
+    <<: *app-base
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    <<: *app-base
+    build:
+      context: .
+      target: app
+    command: ["uvicorn", "youtube_copy.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  worker:
+    <<: *app-base
+    command: ["youtube-worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+
+  nginx:
+    image: nginx:1.31.8-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+
+secrets:
+  postgres_password:
+    file: ./.runtime/secrets/postgres-password
+  garage_rpc_secret:
+    file: ./.runtime/secrets/garage-rpc-secret
+
+volumes:
+  postgres_data:
+  garage_meta:
+  garage_data:
+  s3_credentials:
+
+networks:
+  frontend:
+  backend:
+    internal: true

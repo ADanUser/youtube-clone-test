@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import AnyHttpUrl, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -25,6 +26,7 @@ class Settings(BaseSettings):
     database_url: SecretStr = SecretStr(
         "postgresql+asyncpg://youtube:development-only@localhost:5432/youtube"
     )
+    database_password_file: Path | None = None
 
     s3_endpoint_url: AnyHttpUrl = AnyHttpUrl("http://localhost:3900")
     s3_region: str = "garage"
@@ -65,6 +67,16 @@ class Settings(BaseSettings):
                 self.s3_secret_key_file.read_text(encoding="utf-8").strip(),
             )
         raise RuntimeError("S3 application credentials are not configured")
+
+    def load_database_url(self) -> str:
+        """Return the database URL, optionally injecting a file-backed password."""
+        raw_url = self.database_url.get_secret_value()
+        if self.database_password_file is None:
+            return raw_url
+        password = self.database_password_file.read_text(encoding="utf-8").strip()
+        if not password:
+            raise RuntimeError("database password file is empty")
+        return make_url(raw_url).set(password=password).render_as_string(hide_password=False)
 
 
 @lru_cache
