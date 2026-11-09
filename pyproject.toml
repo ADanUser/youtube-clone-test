@@ -40,6 +40,9 @@ addopts = "-ra --strict-config --strict-markers"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+  "postgres: integration tests that require an explicitly configured disposable PostgreSQL database",
+]
 
 [tool.ruff]
 target-version = "py312"

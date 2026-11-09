@@ -1,8 +1,9 @@
 # YouTube copy
 
-Каркас модульного монолита видеосервиса. На текущем этапе доступны типизированная
-конфигурация, HTTP health endpoint и отдельная точка входа worker. PostgreSQL, Garage,
-миграции и бизнес-функции добавляются следующими пунктами `TODO.md`.
+Каркас модульного монолита видеосервиса. Доступны типизированная конфигурация,
+HTTP health endpoint, отдельная точка входа worker, Compose-инфраструктура и
+предметная схема PostgreSQL с SQLAlchemy 2 и Alembic. Бизнес-функции добавляются
+следующими пунктами `TODO.md`.
 
 ## Локальная подготовка
 
@@ -35,6 +36,17 @@ uv run youtube-worker
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest
+```
+
+Интеграционные тесты схемы требуют отдельную одноразовую PostgreSQL-БД, имя которой
+оканчивается на `_test`. Тесты сами выполняют циклы миграций `base → head` и
+`0001 → head`, поэтому их нельзя направлять на рабочую БД:
+
+```bash
+YOUTUBE_RUN_POSTGRES_TESTS=1 \
+YOUTUBE_DATABASE_URL=postgresql+asyncpg://youtube@localhost:5432/youtube_test \
+YOUTUBE_DATABASE_PASSWORD_FILE=/path/to/test-password \
+uv run pytest tests/test_database_schema.py
 ```
 
 S3-реквизиты можно задать парой переменных `YOUTUBE_S3_ACCESS_KEY_ID` и
