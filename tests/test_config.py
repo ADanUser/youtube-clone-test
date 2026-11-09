@@ -43,3 +43,15 @@ def test_database_password_can_be_loaded_from_a_file(tmp_path: Path) -> None:
     assert settings.load_database_url() == (
         "postgresql+asyncpg://youtube:file-secret@postgres/youtube"
     )
+
+
+def test_production_requires_a_non_default_authentication_secret() -> None:
+    with pytest.raises(ValidationError, match="authentication secret"):
+        Settings(_env_file=None, environment="production")
+
+
+def test_development_authentication_secret_is_ephemeral_and_stable_per_settings() -> None:
+    settings = Settings(_env_file=None)
+
+    assert settings.load_auth_secret() == settings.load_auth_secret()
+    assert len(settings.load_auth_secret()) >= 32

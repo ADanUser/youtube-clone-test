@@ -1,10 +1,11 @@
 """Typed application configuration shared by web and worker processes."""
 
+import secrets
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field, SecretStr, model_validator
+from pydantic import AnyHttpUrl, Field, PrivateAttr, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -28,6 +29,18 @@ class Settings(BaseSettings):
     )
     database_password_file: Path | None = None
 
+    public_origin: AnyHttpUrl = AnyHttpUrl("http://localhost:8080")
+    trust_proxy_headers: bool = False
+    cookie_secure: bool = False
+    session_ttl_seconds: int = Field(default=604_800, ge=300, le=2_592_000)
+    preauth_csrf_ttl_seconds: int = Field(default=3_600, ge=60, le=86_400)
+    auth_secret: SecretStr | None = None
+    auth_secret_file: Path | None = None
+    login_rate_limit_attempts: int = Field(default=5, ge=1, le=100)
+    login_rate_limit_window_seconds: int = Field(default=300, ge=1, le=86_400)
+    registration_rate_limit_attempts: int = Field(default=3, ge=1, le=100)
+    registration_rate_limit_window_seconds: int = Field(default=3_600, ge=1, le=86_400)
+
     s3_endpoint_url: AnyHttpUrl = AnyHttpUrl("http://localhost:3900")
     s3_region: str = "garage"
     s3_bucket: str = "videos"
@@ -42,6 +55,8 @@ class Settings(BaseSettings):
     garage_init_timeout_seconds: int = Field(default=180, gt=0)
     garage_init_poll_seconds: int = Field(default=5, gt=0, le=30)
 
+    _ephemeral_auth_secret: str = PrivateAttr(default_factory=lambda: secrets.token_urlsafe(32))
+
     @model_validator(mode="after")
     def validate_s3_credential_sources(self) -> "Settings":
         direct = (self.s3_access_key_id, self.s3_secret_access_key)
@@ -52,7 +67,25 @@ class Settings(BaseSettings):
             raise ValueError("S3 credential file paths must be supplied as a pair")
         if all(value is not None for value in direct + files):
             raise ValueError("choose either direct or file-based S3 credentials, not both")
+        if (
+            self.environment == "production"
+            and self.auth_secret_file is None
+            and self.auth_secret is None
+        ):
+            raise ValueError("production requires a non-default authentication secret")
         return self
+
+    def load_auth_secret(self) -> str:
+        """Load the HMAC secret used for pre-authentication CSRF tokens."""
+        if self.auth_secret_file is not None:
+            secret = self.auth_secret_file.read_text(encoding="utf-8").strip()
+        elif self.auth_secret is not None:
+            secret = self.auth_secret.get_secret_value()
+        else:
+            secret = self._ephemeral_auth_secret
+        if len(secret) < 32:
+            raise RuntimeError("authentication secret must contain at least 32 characters")
+        return secret
 
     def load_s3_credentials(self) -> tuple[str, str]:
         """Load an application key without exposing it through logs or representations."""

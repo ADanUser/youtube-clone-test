@@ -2,21 +2,15 @@
 
 from __future__ import annotations
 
-import os
 import uuid
 from collections.abc import AsyncIterator
 
 import pytest
 import pytest_asyncio
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import text
-from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
-
-from youtube_copy.config import get_settings
 
 pytestmark = pytest.mark.postgres
 
@@ -36,27 +30,6 @@ EXPECTED_TABLES = {
     "video_assets",
     "videos",
 }
-
-
-@pytest.fixture(scope="module")
-def migrated_database_url() -> str:
-    """Rebuild an explicitly disposable database through both migration paths."""
-    if os.environ.get("YOUTUBE_RUN_POSTGRES_TESTS") != "1":
-        pytest.skip("set YOUTUBE_RUN_POSTGRES_TESTS=1 to run PostgreSQL integration tests")
-
-    get_settings.cache_clear()
-    database_url = get_settings().load_database_url()
-    database_name = make_url(database_url).database or ""
-    if not database_name.endswith("_test"):
-        pytest.fail("PostgreSQL integration tests require a database name ending in '_test'")
-
-    alembic_config = Config("alembic.ini")
-    command.downgrade(alembic_config, "base")
-    command.upgrade(alembic_config, "head")
-    command.downgrade(alembic_config, "20261109_0001")
-    command.upgrade(alembic_config, "head")
-
-    return database_url
 
 
 @pytest_asyncio.fixture

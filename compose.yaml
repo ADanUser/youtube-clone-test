@@ -5,6 +5,10 @@ x-app-environment: &app-environment
   YOUTUBE_DEBUG: "false"
   YOUTUBE_DATABASE_URL: postgresql+asyncpg://youtube@postgres:5432/youtube
   YOUTUBE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  YOUTUBE_PUBLIC_ORIGIN: http://localhost:8080
+  YOUTUBE_TRUST_PROXY_HEADERS: "true"
+  YOUTUBE_COOKIE_SECURE: "false"
+  YOUTUBE_AUTH_SECRET_FILE: /run/secrets/app_secret
   YOUTUBE_S3_ENDPOINT_URL: http://garage:3900
   YOUTUBE_S3_REGION: garage
   YOUTUBE_S3_BUCKET: videos
@@ -17,6 +21,7 @@ x-app-base: &app-base
   environment: *app-environment
   secrets:
     - postgres_password
+    - app_secret
   volumes:
     - s3_credentials:/run/youtube-s3:ro
   networks:
@@ -157,6 +162,8 @@ services:
       - backend
 
 secrets:
+  app_secret:
+    file: ./.runtime/secrets/app-secret
   postgres_password:
     file: ./.runtime/secrets/postgres-password
   garage_rpc_secret:
