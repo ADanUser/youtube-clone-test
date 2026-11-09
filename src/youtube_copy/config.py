@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     registration_rate_limit_attempts: int = Field(default=3, ge=1, le=100)
     registration_rate_limit_window_seconds: int = Field(default=3_600, ge=1, le=86_400)
 
+    upload_max_bytes: int = Field(default=500 * 1024 * 1024, gt=0)
+    upload_temp_dir: Path = Path("/tmp/youtube-uploads")
+    upload_disk_reserve_bytes: int = Field(default=128 * 1024 * 1024, ge=0)
+    upload_concurrency: int = Field(default=2, ge=1, le=16)
+    upload_timeout_seconds: int = Field(default=3600, ge=1, le=7200)
+    upload_idle_timeout_seconds: int = Field(default=60, ge=1, le=300)
+    upload_rate_limit_attempts: int = Field(default=10, ge=1, le=1000)
+    upload_rate_limit_window_seconds: int = Field(default=3600, ge=1, le=86400)
+
     s3_endpoint_url: AnyHttpUrl = AnyHttpUrl("http://localhost:3900")
     s3_region: str = "garage"
     s3_bucket: str = "videos"

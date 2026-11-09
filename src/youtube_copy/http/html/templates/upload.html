@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Загрузка видео</title>
+  <script src="/static/upload.js" defer></script>
+  <style>
+    body { font: 17px/1.5 system-ui, sans-serif; margin: 2rem auto; padding: 0 1rem; max-width: 42rem; color: #202124; }
+    label { display: block; margin: 1rem 0; }
+    input:not([type=file]), textarea, select { box-sizing: border-box; display: block; width: 100%; padding: .6rem; font: inherit; }
+    button { padding: .7rem 1rem; font: inherit; cursor: pointer; }
+    progress { width: 100%; height: 1.5rem; }
+    fieldset { border: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Загрузить видео</h1>
+    <p id="account">Проверяем вход…</p>
+    <p>MP4, MOV, WebM или MKV, до {{ (max_bytes / 1024 / 1024) | round(1) }} МиБ.
+      Проверка содержимого выполняется при обработке. По умолчанию видео приватное.</p>
+    <form id="upload-form" data-max-bytes="{{ max_bytes }}">
+      <fieldset id="fields" disabled>
+        <label>Название <input name="title" maxlength="200" required></label>
+        <label>Описание <textarea name="description" maxlength="5000" rows="4"></textarea></label>
+        <label>Видимость <select name="visibility"><option value="private">Приватное</option><option value="public">Публичное</option></select></label>
+        <label>Файл <input name="file" type="file" accept=".mp4,.mov,.webm,.mkv" required></label>
+        <button type="submit">Загрузить</button>
+      </fieldset>
+      <button id="cancel" type="button" disabled>Отменить передачу</button>
+    </form>
+    <p><progress id="progress" max="100" value="0" aria-label="Прогресс передачи"></progress></p>
+    <p id="status" role="status" aria-live="polite">Выберите файл для загрузки.</p>
+  </main>
+</body>
+</html>

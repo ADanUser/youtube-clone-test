@@ -14,6 +14,10 @@ x-app-environment: &app-environment
   YOUTUBE_S3_BUCKET: videos
   YOUTUBE_S3_ACCESS_KEY_FILE: /run/youtube-s3/access-key-id
   YOUTUBE_S3_SECRET_KEY_FILE: /run/youtube-s3/secret-access-key
+  YOUTUBE_UPLOAD_TEMP_DIR: /tmp/youtube-uploads
+  YOUTUBE_UPLOAD_MAX_BYTES: "524288000"
+  YOUTUBE_UPLOAD_CONCURRENCY: "2"
+  YOUTUBE_UPLOAD_DISK_RESERVE_BYTES: "134217728"
 
 x-app-base: &app-base
   image: youtube-copy-app:local

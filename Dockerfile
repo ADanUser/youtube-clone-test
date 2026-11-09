@@ -27,3 +27,11 @@ FROM app AS garage-init
 USER root
 COPY --from=garage /garage /usr/local/bin/garage
 ENTRYPOINT ["python", "-m", "youtube_copy.infrastructure.garage_init"]
+
+FROM app AS tests
+USER root
+RUN uv sync --frozen --extra dev --no-editable \
+    && rm -rf /root/.cache/uv
+COPY tests ./tests
+USER 10001:10001
+CMD ["pytest", "-q"]

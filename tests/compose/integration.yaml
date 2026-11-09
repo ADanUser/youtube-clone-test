@@ -1,0 +1,18 @@
+# Uses only the disposable youtube_test database. No production data is reset.
+services:
+  tests:
+    extends:
+      file: compose.yaml
+      service: web
+    image: youtube-copy-tests:local
+    build:
+      context: .
+      target: tests
+    restart: "no"
+    environment:
+      YOUTUBE_DATABASE_URL: postgresql+asyncpg://youtube@postgres:5432/youtube_test
+      YOUTUBE_RUN_POSTGRES_TESTS: "1"
+      YOUTUBE_RUN_S3_TESTS: "1"
+    command: ["pytest", "-q", "-o", "cache_dir=/tmp/pytest-cache"]
+    healthcheck:
+      disable: true
