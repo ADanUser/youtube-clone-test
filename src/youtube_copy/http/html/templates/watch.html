@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ video.title }}</title></head>
+<body>
+<main>
+<h1>{{ video.title }}</h1>
+<video controls playsinline preload="metadata" style="width:100%;max-width:960px"
+       poster="/api/v1/videos/{{ video.id }}/thumbnail"
+       src="/api/v1/videos/{{ video.id }}/stream">
+  Ваш браузер не поддерживает HTML5 video.
+</video>
+<p>{{ video.description }}</p>
+</main>
+</body>
+</html>

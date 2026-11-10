@@ -102,3 +102,10 @@ def client_rate_limit_key(
         if forwarded:
             return forwarded.split(",", 1)[0].strip()
     return request.client.host if request.client else "unknown"
+
+
+async def get_optional_auth(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    raw_token: Annotated[str | None, Depends(session_cookie_scheme)],
+) -> AuthContext | None:
+    return await authenticate_session(db, raw_token)

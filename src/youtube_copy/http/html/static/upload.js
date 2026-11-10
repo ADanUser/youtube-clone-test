@@ -18,7 +18,11 @@ async function pollStatus(id) {
     if (!response.ok) throw new Error("Статус недоступен. Проверьте вход в аккаунт.");
     const video = await response.json();
     if (video.processing_state === "ready") {
-      statusLine.textContent = "Видео готово.";
+      statusLine.textContent = "Видео готово. ";
+      const watch = document.createElement("a");
+      watch.href = `/watch/${encodeURIComponent(id)}`;
+      watch.textContent = "Смотреть видео";
+      statusLine.append(watch);
     } else if (video.processing_state === "failed") {
       statusLine.textContent = "Обработка завершилась ошибкой. Можно загрузить файл повторно.";
     } else {

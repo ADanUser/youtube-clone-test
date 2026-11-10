@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from youtube_copy.accounts.rate_limit import SlidingWindowRateLimiter
 from youtube_copy.config import Settings, get_settings
 from youtube_copy.http.api import api_router
+from youtube_copy.http.html.playback import router as playback_page_router
 from youtube_copy.http.html.uploads import router as upload_page_router
 from youtube_copy.infrastructure.database.session import dispose_database_engine
 from youtube_copy.infrastructure.uploads import OriginalStorage, UploadSlots
@@ -35,6 +36,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.original_storage = OriginalStorage(application_settings)
     application.include_router(api_router)
     application.include_router(upload_page_router)
+    application.include_router(playback_page_router)
     application.mount(
         "/static", StaticFiles(directory=Path(__file__).parent / "http/html/static"), name="static"
     )
