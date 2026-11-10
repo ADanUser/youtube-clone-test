@@ -35,6 +35,7 @@
         <a href="/upload" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">＋</span>Загрузить</a>
         <a href="/studio" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">▣</span>Ваши видео</a>
         <a href="/playlists" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">☷</span>Плейлисты</a>
+        {% if auth.user.role in ['moderator', 'admin'] %}<a href="/moderation" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">⚑</span>Модерация</a>{% endif %}
       {% endif %}
     </aside>
     <main class="min-w-0 flex-1 px-4 pb-20 pt-5 md:px-6 md:pb-8 lg:px-8">{% block content %}{% endblock %}</main>

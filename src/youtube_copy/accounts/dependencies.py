@@ -94,6 +94,22 @@ async def require_admin(
     return auth
 
 
+async def require_moderator(
+    auth: Annotated[AuthContext, Depends(get_current_auth)],
+) -> AuthContext:
+    if auth.user.role not in {"moderator", "admin"}:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "moderator role required")
+    return auth
+
+
+async def require_moderator_csrf(
+    auth: Annotated[AuthContext, Depends(require_authenticated_csrf)],
+) -> AuthContext:
+    if auth.user.role not in {"moderator", "admin"}:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "moderator role required")
+    return auth
+
+
 def client_rate_limit_key(
     request: Request, settings: Annotated[Settings, Depends(get_request_settings)]
 ) -> str:

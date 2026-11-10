@@ -187,3 +187,7 @@ async def update_account_as_admin(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def list_accounts_as_admin(db: AsyncSession) -> list[User]:
+    return list((await db.scalars(select(User).order_by(User.created_at, User.id))).all())

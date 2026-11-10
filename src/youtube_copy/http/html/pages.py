@@ -9,11 +9,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from youtube_copy.accounts.dependencies import get_current_auth, get_optional_auth
-from youtube_copy.accounts.service import AuthContext
+from youtube_copy.accounts.dependencies import (
+    get_current_auth,
+    get_optional_auth,
+    require_moderator,
+)
+from youtube_copy.accounts.service import AuthContext, list_accounts_as_admin
 from youtube_copy.channels.service import ChannelNotFoundError, get_channel_by_handle
 from youtube_copy.http.html.uploads import templates
 from youtube_copy.infrastructure.database.session import get_db_session
+from youtube_copy.moderation.service import list_reports
 from youtube_copy.social.service import list_own_playlists, subscription_state, view_playlist
 from youtube_copy.videos.catalog import owner_catalog, public_catalog
 
@@ -127,5 +132,21 @@ async def playlist_page(
         request,
         "playlist.html",
         context(request, auth, view=playlist),
+        headers={"Cache-Control": "private, no-store"},
+    )
+
+
+@router.get("/moderation", response_class=HTMLResponse, include_in_schema=False)
+async def moderation_page(
+    request: Request,
+    db: Database,
+    auth: Annotated[AuthContext, Depends(require_moderator)],
+) -> HTMLResponse:
+    reports = await list_reports(db, auth)
+    users = await list_accounts_as_admin(db) if auth.user.role == "admin" else []
+    return templates.TemplateResponse(
+        request,
+        "moderation.html",
+        context(request, auth, reports=reports, users=users),
         headers={"Cache-Control": "private, no-store"},
     )
