@@ -12,6 +12,10 @@ ENV PYTHONUNBUFFERED=1 \
 RUN groupadd --gid 10001 youtube \
     && useradd --uid 10001 --gid youtube --home-dir /nonexistent --shell /usr/sbin/nologin youtube
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg=7:5.1.9-0+deb12u1 libseccomp2=2.5.4-1+deb12u1 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable \
