@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}{{ profile.title }} — ViewTube{% endblock %}
+{% block content %}
+<section class="mb-8 flex items-center gap-5 border-b border-line pb-7"><div class="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-purple-600 text-3xl font-bold sm:h-32 sm:w-32">{{ profile.title[:1]|upper }}</div><div><h1 class="text-2xl font-bold sm:text-4xl">{{ profile.title }}</h1><p class="mt-1 text-sm text-zinc-400">@{{ profile.handle }} · {{ videos.total }} видео</p>{% if profile.description %}<p class="mt-3 max-w-2xl whitespace-pre-line text-sm text-zinc-300">{{ profile.description }}</p>{% endif %}</div></section>
+<h2 class="mb-5 text-lg font-bold">Видео</h2>{% include "_grid.html" %}
+{% endblock %}

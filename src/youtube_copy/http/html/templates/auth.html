@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ 'Регистрация' if mode == 'register' else 'Вход' }} — ViewTube{% endblock %}
+{% block content %}
+<div class="mx-auto mt-8 max-w-md rounded-2xl border border-line bg-[#181818] p-7 sm:p-10">
+  <div class="mb-7 text-center"><span class="inline-grid h-10 w-14 place-items-center rounded-xl bg-red">▶</span><h1 class="mt-5 text-2xl font-semibold">{{ 'Создайте аккаунт' if mode == 'register' else 'Войдите в ViewTube' }}</h1></div>
+  <form data-auth-form data-mode="{{ mode }}" class="space-y-4">
+    {% if mode == 'register' %}<label class="block text-sm text-zinc-300">Email<input name="email" type="email" maxlength="254" required autocomplete="email" class="mt-1 w-full rounded-lg border border-line bg-yt px-3 py-3 outline-none focus:border-blue-500"></label><label class="block text-sm text-zinc-300">Имя пользователя<input name="username" minlength="3" maxlength="64" required autocomplete="username" class="mt-1 w-full rounded-lg border border-line bg-yt px-3 py-3 outline-none focus:border-blue-500"></label><label class="block text-sm text-zinc-300">Название канала<input name="channel_title" maxlength="120" class="mt-1 w-full rounded-lg border border-line bg-yt px-3 py-3 outline-none focus:border-blue-500"></label>{% else %}<label class="block text-sm text-zinc-300">Email или имя пользователя<input name="login" required autocomplete="username" class="mt-1 w-full rounded-lg border border-line bg-yt px-3 py-3 outline-none focus:border-blue-500"></label>{% endif %}
+    <label class="block text-sm text-zinc-300">Пароль<input name="password" type="password" minlength="{{ 12 if mode == 'register' else 1 }}" maxlength="128" required autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" class="mt-1 w-full rounded-lg border border-line bg-yt px-3 py-3 outline-none focus:border-blue-500"></label>
+    <p data-form-error class="hidden rounded-lg bg-red/10 p-3 text-sm text-red-300" role="alert"></p>
+    <button class="w-full rounded-full bg-blue-600 py-3 font-semibold hover:bg-blue-500 disabled:opacity-50">{{ 'Зарегистрироваться' if mode == 'register' else 'Войти' }}</button>
+  </form>
+  <p class="mt-6 text-center text-sm text-zinc-400">{% if mode == 'register' %}Уже есть аккаунт? <a href="/login" class="text-blue-400">Войти</a>{% else %}Нет аккаунта? <a href="/register" class="text-blue-400">Создать</a>{% endif %}</p>
+</div>
+{% endblock %}

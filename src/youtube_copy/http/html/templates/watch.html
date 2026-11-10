@@ -1,16 +1,1 @@
-<!doctype html>
-<html lang="ru">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ video.title }}</title></head>
-<body>
-<main>
-<h1>{{ video.title }}</h1>
-<video controls playsinline preload="metadata" style="width:100%;max-width:960px"
-       poster="/api/v1/videos/{{ video.id }}/thumbnail"
-       src="/api/v1/videos/{{ video.id }}/stream">
-  Ваш браузер не поддерживает HTML5 video.
-</video>
-<p>{{ video.description }}</p>
-</main>
-</body>
-</html>
+{% extends "base.html" %}{% block title %}{{ video.title }} — ViewTube{% endblock %}{% block content %}<div class="mx-auto max-w-6xl"><div class="aspect-video overflow-hidden rounded-xl bg-black"><video controls playsinline preload="metadata" class="h-full w-full" poster="/api/v1/videos/{{ video.id }}/thumbnail" src="/api/v1/videos/{{ video.id }}/stream">Ваш браузер не поддерживает HTML5 video.</video></div><h1 class="mt-4 text-xl font-bold">{{ video.title }}</h1><div class="mt-4 flex items-center justify-between border-b border-line pb-4"><a href="/channel/{{ channel.handle }}" class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-full bg-purple-600 font-bold">{{ channel.title[:1]|upper }}</span><span><strong class="block">{{ channel.title }}</strong><small class="text-zinc-400">@{{ channel.handle }}</small></span></a><span class="text-sm text-zinc-400">{{ video.created_at.strftime('%d.%m.%Y') }}</span></div>{% if video.description %}<div class="mt-4 whitespace-pre-line rounded-xl bg-panel p-4 text-sm">{{ video.description }}</div>{% endif %}<section class="mt-8"><h2 class="text-lg font-bold">Комментарии</h2><p class="mt-4 rounded-xl border border-line p-6 text-zinc-400">Комментарии появятся на следующем этапе проекта.</p></section></div>{% endblock %}

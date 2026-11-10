@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}ViewTube{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{yt:'#0f0f0f',panel:'#212121',line:'#303030',red:'#ff0033'}}}}</script>
+  <script src="/static/site.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-yt text-white antialiased selection:bg-red/40">
+  <header class="sticky top-0 z-40 flex h-14 items-center gap-3 bg-yt/95 px-3 backdrop-blur md:px-5">
+    <a href="/" class="flex shrink-0 items-center gap-2 font-bold tracking-tight" aria-label="ViewTube — главная">
+      <span class="grid h-6 w-9 place-items-center rounded-lg bg-red text-xs">▶</span><span>ViewTube</span>
+    </a>
+    <form action="/search" class="mx-auto flex min-w-0 max-w-2xl flex-1" role="search">
+      <input name="q" value="{{ query|default('') }}" maxlength="200" placeholder="Введите запрос"
+             class="min-w-0 flex-1 rounded-l-full border border-line bg-[#121212] px-4 py-2 text-sm outline-none placeholder:text-zinc-500 focus:border-blue-500">
+      <button class="rounded-r-full border border-l-0 border-line bg-panel px-5 text-zinc-300 hover:bg-zinc-700" aria-label="Поиск">⌕</button>
+    </form>
+    {% if auth %}
+      <a href="/upload" class="hidden rounded-full bg-panel px-4 py-2 text-sm font-medium hover:bg-zinc-700 sm:block">＋ Создать</a>
+      <button data-logout class="grid h-9 w-9 place-items-center rounded-full bg-purple-600 font-semibold" title="Выйти">{{ auth.channel.title[:1]|upper }}</button>
+    {% else %}
+      <a href="/login" class="shrink-0 rounded-full border border-line px-4 py-2 text-sm font-semibold text-blue-400 hover:bg-blue-500/10">Войти</a>
+    {% endif %}
+  </header>
+  <div class="mx-auto flex max-w-[1800px]">
+    <aside class="fixed bottom-0 z-30 flex h-14 w-full items-center justify-around border-t border-line bg-yt md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] md:w-20 md:flex-col md:justify-start md:border-0 md:pt-3 lg:w-56">
+      <a href="/" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">⌂</span>Главная</a>
+      <a href="/search" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">⌕</span>Поиск</a>
+      {% if auth %}
+        <a href="/upload" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">＋</span>Загрузить</a>
+        <a href="/studio" class="flex flex-col items-center gap-1 rounded-xl px-5 py-2 text-xs hover:bg-panel lg:w-52 lg:flex-row lg:gap-5 lg:text-sm"><span class="text-xl">▣</span>Ваши видео</a>
+      {% endif %}
+    </aside>
+    <main class="min-w-0 flex-1 px-4 pb-20 pt-5 md:px-6 md:pb-8 lg:px-8">{% block content %}{% endblock %}</main>
+  </div>
+  <div id="toast" role="status" aria-live="polite" class="fixed bottom-20 left-1/2 z-50 hidden -translate-x-1/2 rounded bg-zinc-100 px-4 py-3 text-sm text-zinc-900 shadow-xl md:bottom-6"></div>
+</body>
+</html>

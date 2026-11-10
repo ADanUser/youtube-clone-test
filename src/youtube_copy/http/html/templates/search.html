@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Поиск — ViewTube{% endblock %}
+{% block content %}
+  {% if query %}<h1 class="mb-6 text-xl font-bold">Результаты по запросу «{{ query }}» <span class="font-normal text-zinc-500">· {{ videos.total }}</span></h1>{% include "_grid.html" %}
+  {% else %}<div class="mx-auto max-w-xl py-24 text-center"><div class="text-6xl">⌕</div><h1 class="mt-6 text-2xl font-bold">Найдите интересное видео</h1><p class="mt-2 text-zinc-400">Поиск выполняется по названию.</p></div>{% endif %}
+{% endblock %}

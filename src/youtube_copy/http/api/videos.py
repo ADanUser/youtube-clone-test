@@ -10,13 +10,22 @@ from starlette.requests import ClientDisconnect
 from youtube_copy.accounts.dependencies import get_current_auth, require_authenticated_csrf
 from youtube_copy.accounts.service import AuthContext
 from youtube_copy.infrastructure.database.session import get_db_session
+from youtube_copy.videos.catalog import update_owned_video
 from youtube_copy.videos.errors import UploadError
-from youtube_copy.videos.schemas import VideoCreate, VideoStatus
+from youtube_copy.videos.schemas import VideoCreate, VideoStatus, VideoUpdate
 from youtube_copy.videos.service import create_video, get_upload_status, receive_original
 
 router = APIRouter(prefix="/videos", tags=["uploads"])
 Database = Annotated[AsyncSession, Depends(get_db_session)]
 Authenticated = Annotated[AuthContext, Depends(require_authenticated_csrf)]
+
+
+@router.patch("/{video_id}", status_code=204)
+async def edit_video(
+    video_id: uuid.UUID, command: VideoUpdate, db: Database, auth: Authenticated
+) -> Response:
+    await update_owned_video(db, auth, video_id, command)
+    return Response(status_code=204, headers={"Cache-Control": "private, no-store"})
 
 
 async def limit_uploads(request: Request, auth: AuthContext, action: str) -> None:

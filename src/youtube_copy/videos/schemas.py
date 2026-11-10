@@ -23,6 +23,24 @@ class VideoCreate(BaseModel):
         return value
 
 
+class VideoUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=5000)
+    visibility: Literal["public", "private"] | None = None
+
+    @field_validator("title")
+    @classmethod
+    def nonblank_updated_title(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError("title must not be blank")
+        return value
+
+
 class VideoStatus(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
