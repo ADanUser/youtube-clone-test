@@ -51,9 +51,10 @@ async def test_discovery_channel_search_and_pagination(screen_case):
     assert home.status_code == 200
     assert home.text.count('class="group min-w-0"') == 12
     assert "Visible title" in home.text and "Private title" not in home.text
-    assert "Visible title 0 <script>" not in home.text
-    assert "Visible title 0 &lt;script&gt;" in home.text
-    second = await api.client.get("/?page=2")
+    escaped = await api.client.get("/search", params={"q": "Visible title 0"})
+    assert "Visible title 0 <script>" not in escaped.text
+    assert "Visible title 0 &lt;script&gt;" in escaped.text
+    second = await api.client.get("/search", params={"q": "Visible title", "page": 2})
     assert second.text.count('class="group min-w-0"') == 1
     search = await api.client.get("/search", params={"q": "title 1"})
     assert search.status_code == 200 and "Результаты по запросу" in search.text

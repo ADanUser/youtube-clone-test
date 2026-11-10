@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -13,6 +14,7 @@ from youtube_copy.accounts.service import AuthContext
 from youtube_copy.channels.service import ChannelNotFoundError, get_channel_by_handle
 from youtube_copy.http.html.uploads import templates
 from youtube_copy.infrastructure.database.session import get_db_session
+from youtube_copy.social.service import list_own_playlists, subscription_state, view_playlist
 from youtube_copy.videos.catalog import owner_catalog, public_catalog
 
 router = APIRouter()
@@ -56,8 +58,18 @@ async def channel(
     except ChannelNotFoundError as error:
         raise HTTPException(404, "channel_not_found") from error
     videos = await public_catalog(db, auth, page=page, channel_id=profile.id)
+    subscribers, subscribed = await subscription_state(db, profile, auth)
     return templates.TemplateResponse(
-        request, "channel.html", context(request, auth, profile=profile, videos=videos)
+        request,
+        "channel.html",
+        context(
+            request,
+            auth,
+            profile=profile,
+            videos=videos,
+            subscribers=subscribers,
+            subscribed=subscribed,
+        ),
     )
 
 
@@ -87,5 +99,33 @@ async def studio(
         request,
         "studio.html",
         context(request, auth, videos=videos),
+        headers={"Cache-Control": "private, no-store"},
+    )
+
+
+@router.get("/playlists", response_class=HTMLResponse, include_in_schema=False)
+async def playlists_page(
+    request: Request,
+    db: Database,
+    auth: Annotated[AuthContext, Depends(get_current_auth)],
+) -> HTMLResponse:
+    playlists = await list_own_playlists(db, auth)
+    return templates.TemplateResponse(
+        request,
+        "playlists.html",
+        context(request, auth, playlists=playlists),
+        headers={"Cache-Control": "private, no-store"},
+    )
+
+
+@router.get("/playlist/{playlist_id}", response_class=HTMLResponse, include_in_schema=False)
+async def playlist_page(
+    playlist_id: uuid.UUID, request: Request, db: Database, auth: Viewer
+) -> HTMLResponse:
+    playlist = await view_playlist(db, playlist_id, auth)
+    return templates.TemplateResponse(
+        request,
+        "playlist.html",
+        context(request, auth, view=playlist),
         headers={"Cache-Control": "private, no-store"},
     )

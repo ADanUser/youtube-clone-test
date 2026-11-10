@@ -9,6 +9,7 @@ from sqlalchemy import select
 from youtube_copy.http.api.playback import NO_STORE, Database, Viewer
 from youtube_copy.http.html.uploads import templates
 from youtube_copy.infrastructure.database.models import Channel, Video
+from youtube_copy.social.service import video_social
 from youtube_copy.videos.playback import view_video
 
 router = APIRouter()
@@ -20,9 +21,10 @@ async def watch(video_id: uuid.UUID, request: Request, db: Database, auth: Viewe
     channel = await db.scalar(
         select(Channel).join(Video, Video.channel_id == Channel.id).where(Video.id == video_id)
     )
+    social = await video_social(db, video_id, auth)
     return templates.TemplateResponse(
         request=request,
         name="watch.html",
-        context={"video": video, "channel": channel, "auth": auth},
+        context={"video": video, "channel": channel, "auth": auth, "social": social},
         headers=NO_STORE,
     )
