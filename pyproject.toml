@@ -33,6 +33,7 @@ dev = [
 [project.scripts]
 youtube-web = "youtube_copy.main:run"
 youtube-worker = "youtube_copy.worker.main:run"
+youtube-seed = "youtube_copy.seed:run"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/youtube_copy"]

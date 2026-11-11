@@ -23,6 +23,7 @@ RUN uv sync --frozen --no-dev --no-editable \
 
 COPY alembic.ini ./
 COPY migrations ./migrations
+COPY scripts/seed.py ./scripts/seed.py
 
 ENV PATH="/app/.venv/bin:${PATH}"
 USER 10001:10001

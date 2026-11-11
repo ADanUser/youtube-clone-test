@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     s3_access_key_file: Path | None = None
     s3_secret_key_file: Path | None = None
 
+    seed_credentials_file: Path = Path(".runtime/demo-credentials")
+    seed_ready_timeout_seconds: int = Field(default=300, ge=10, le=3600)
+
     garage_layout_zone: str = "local"
     garage_layout_capacity_bytes: int = Field(default=10_000_000_000, gt=0)
     garage_app_key_name: str = "youtube-app"

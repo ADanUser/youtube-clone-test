@@ -18,6 +18,7 @@ x-app-environment: &app-environment
   YOUTUBE_UPLOAD_MAX_BYTES: "524288000"
   YOUTUBE_UPLOAD_CONCURRENCY: "2"
   YOUTUBE_UPLOAD_DISK_RESERVE_BYTES: "134217728"
+  YOUTUBE_SEED_CREDENTIALS_FILE: /run/youtube-demo/credentials
 
 x-app-base: &app-base
   image: youtube-copy-app:local
@@ -166,6 +167,25 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  seed:
+    <<: *app-base
+    restart: "no"
+    # The one-shot process owns the root-created credential volume and writes a 0600 file.
+    user: "0:0"
+    command: ["python", "/app/scripts/seed.py"]
+    volumes:
+      - s3_credentials:/run/youtube-s3:ro
+      - demo_credentials:/run/youtube-demo
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+      worker:
+        condition: service_healthy
+
   nginx:
     image: nginx:1.31.8-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11
     restart: unless-stopped
@@ -193,6 +213,7 @@ volumes:
   garage_meta:
   garage_data:
   s3_credentials:
+  demo_credentials:
 
 networks:
   frontend:
