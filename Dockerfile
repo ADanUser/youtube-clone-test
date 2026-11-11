@@ -37,6 +37,9 @@ FROM app AS tests
 USER root
 RUN uv sync --frozen --extra dev --no-editable \
     && rm -rf /root/.cache/uv
+RUN playwright install-deps chromium
+COPY scripts/install-test-browser.py /tmp/install-test-browser.py
+RUN python /tmp/install-test-browser.py
 COPY tests ./tests
 USER 10001:10001
 CMD ["pytest", "-q"]

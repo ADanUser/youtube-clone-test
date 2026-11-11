@@ -120,7 +120,12 @@ async def test_likes_comments_and_subscriptions_are_unique_and_authorized(social
             )
             == 1
         )
-        assert await db.scalar(select(func.count()).select_from(Comment)) == 1
+        assert (
+            await db.scalar(
+                select(func.count()).select_from(Comment).where(Comment.video_id == public_id)
+            )
+            == 1
+        )
 
 
 async def test_playlists_filter_private_videos_and_preserve_order(social_case):

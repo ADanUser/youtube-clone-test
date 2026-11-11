@@ -21,17 +21,22 @@ from youtube_copy.videos.schemas import VideoStatus
 
 def can_view_video(user_id: uuid.UUID | None) -> ColumnElement[bool]:
     """Correlated predicate reusable before pagination; roles never bypass privacy."""
-    owner_active = exists().where(
-        Channel.id == Video.channel_id, User.id == Channel.user_id, User.is_active.is_(True)
+    # Catalog/playlist queries also join Channel: only Video may correlate outward.
+    owner_active = (
+        exists()
+        .correlate(Video)
+        .where(Channel.id == Video.channel_id, User.id == Channel.user_id, User.is_active.is_(True))
     )
     audience = Video.visibility == "public"
     if user_id is not None:
         audience = or_(
             audience,
-            exists().where(Channel.id == Video.channel_id, Channel.user_id == user_id),
-            exists().where(
-                VideoAccessGrant.video_id == Video.id, VideoAccessGrant.user_id == user_id
-            ),
+            exists()
+            .correlate(Video)
+            .where(Channel.id == Video.channel_id, Channel.user_id == user_id),
+            exists()
+            .correlate(Video)
+            .where(VideoAccessGrant.video_id == Video.id, VideoAccessGrant.user_id == user_id),
         )
     return (
         (Video.processing_state == "ready")

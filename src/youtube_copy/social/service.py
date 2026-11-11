@@ -233,7 +233,9 @@ async def add_playlist_video(
     db: AsyncSession, playlist_id: uuid.UUID, video_id: uuid.UUID, auth: AuthContext
 ) -> None:
     playlist = await db.scalar(
-        select(Playlist).where(Playlist.id == playlist_id, Playlist.owner_id == auth.user.id)
+        select(Playlist)
+        .where(Playlist.id == playlist_id, Playlist.owner_id == auth.user.id)
+        .with_for_update()
     )
     if playlist is None:
         raise UploadError(404, "playlist_not_found")
@@ -295,7 +297,9 @@ async def remove_playlist_video(
     db: AsyncSession, playlist_id: uuid.UUID, video_id: uuid.UUID, auth: AuthContext
 ) -> None:
     owned = await db.scalar(
-        select(Playlist.id).where(Playlist.id == playlist_id, Playlist.owner_id == auth.user.id)
+        select(Playlist.id)
+        .where(Playlist.id == playlist_id, Playlist.owner_id == auth.user.id)
+        .with_for_update()
     )
     if owned is None:
         raise UploadError(404, "playlist_not_found")

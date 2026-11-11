@@ -54,7 +54,7 @@ async def public_catalog(
     query: str | None = None,
     channel_id: uuid.UUID | None = None,
 ) -> CatalogPage:
-    filters = [can_view_video(auth.user.id if auth else None)]
+    filters = [Video.visibility == "public", can_view_video(auth.user.id if auth else None)]
     if query:
         filters.append(Video.title.ilike(f"%{query}%"))
     if channel_id:

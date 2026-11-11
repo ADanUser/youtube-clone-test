@@ -4,20 +4,21 @@ function toast(message) { const node = document.querySelector("#toast"); if (!no
 document.querySelector("[data-logout]")?.addEventListener("click", async () => { const response = await fetch("/api/v1/auth/logout", {method: "POST", headers: {"X-CSRF-Token": cookie("youtube_csrf")}}); if (response.ok) location.assign("/"); else toast("Не удалось выйти. Повторите попытку."); });
 const authForm = document.querySelector("[data-auth-form]");
 authForm?.addEventListener("submit", async event => { event.preventDefault(); const button = authForm.querySelector("button"); const error = authForm.querySelector("[data-form-error]"); button.disabled = true; error.classList.add("hidden"); try { const csrfResponse = await fetch("/api/v1/auth/csrf", {cache: "no-store"}); if (!csrfResponse.ok) throw new Error("Не удалось начать безопасный вход."); const {csrf_token: csrf} = await csrfResponse.json(); const values = Object.fromEntries(new FormData(authForm)); if (values.channel_title === "") delete values.channel_title; const response = await fetch(`/api/v1/auth/${authForm.dataset.mode}`, {method: "POST", headers: {"Content-Type": "application/json", "X-CSRF-Token": csrf}, body: JSON.stringify(values)}); if (!response.ok) { const messages = {401: "Неверный логин или пароль.", 409: "Аккаунт с такими данными уже существует.", 422: "Проверьте заполнение полей и длину пароля.", 429: "Слишком много попыток. Попробуйте позже."}; throw new Error(messages[response.status] || "Не удалось выполнить запрос."); } location.assign("/"); } catch (reason) { error.textContent = reason.message; error.classList.remove("hidden"); } finally { button.disabled = false; } });
-document.querySelectorAll("[data-studio-row]").forEach(row => { row.querySelector("[data-save]").addEventListener("click", async event => { event.currentTarget.disabled = true; const response = await fetch(`/api/v1/videos/${row.dataset.id}`, {method: "PATCH", headers: {"Content-Type": "application/json", "X-CSRF-Token": cookie("youtube_csrf")}, body: JSON.stringify({title: row.querySelector("[data-title]").value, description: row.querySelector("[data-description]").value, visibility: row.querySelector("[data-visibility]").value})}); toast(response.ok ? "Изменения сохранены" : "Не удалось сохранить изменения"); event.currentTarget.disabled = false; }); });
+document.querySelectorAll("[data-studio-row]").forEach(row => { row.querySelector("[data-save]").addEventListener("click", async event => { const button = event.currentTarget; button.disabled = true; const response = await fetch(`/api/v1/videos/${row.dataset.id}`, {method: "PATCH", headers: {"Content-Type": "application/json", "X-CSRF-Token": cookie("youtube_csrf")}, body: JSON.stringify({title: row.querySelector("[data-title]").value, description: row.querySelector("[data-description]").value, visibility: row.querySelector("[data-visibility]").value})}); toast(response.ok ? "Изменения сохранены" : "Не удалось сохранить изменения"); button.disabled = false; }); });
 
 async function mutate(url, method, body) {
   return fetch(url, {method, headers: {"Content-Type": "application/json", "X-CSRF-Token": cookie("youtube_csrf")}, body: body ? JSON.stringify(body) : undefined});
 }
 const videoRoot = document.querySelector("[data-video-id]");
 document.querySelector("[data-like]")?.addEventListener("click", async event => {
+  const button = event.currentTarget;
   if (!cookie("youtube_csrf")) { location.assign("/login"); return; }
-  const active = event.currentTarget.dataset.active === "true";
+  const active = button.dataset.active === "true";
   const response = await mutate(`/api/v1/videos/${videoRoot.dataset.videoId}/like`, active ? "DELETE" : "PUT");
   if (!response.ok) { toast("Не удалось изменить лайк"); return; }
-  event.currentTarget.dataset.active = String(!active);
-  event.currentTarget.firstChild.textContent = active ? "♡ " : "♥ ";
-  const count = event.currentTarget.querySelector("[data-like-count]");
+  button.dataset.active = String(!active);
+  button.firstChild.textContent = active ? "♡ " : "♥ ";
+  const count = button.querySelector("[data-like-count]");
   count.textContent = String(Number(count.textContent) + (active ? -1 : 1));
 });
 document.querySelector("[data-comment-form]")?.addEventListener("submit", async event => {
@@ -45,12 +46,13 @@ document.querySelectorAll("[data-add-playlist]").forEach(button => button.addEve
   if (response.ok) playlistDialog.close();
 }));
 document.querySelector("[data-subscribe]")?.addEventListener("click", async event => {
+  const button = event.currentTarget;
   const root = document.querySelector("[data-channel-id]");
-  const active = event.currentTarget.dataset.active === "true";
+  const active = button.dataset.active === "true";
   const response = await mutate(`/api/v1/channels/${root.dataset.channelId}/subscription`, active ? "DELETE" : "PUT");
   if (!response.ok) { toast("Не удалось изменить подписку"); return; }
-  event.currentTarget.dataset.active = String(!active);
-  event.currentTarget.textContent = active ? "Подписаться" : "Вы подписаны";
+  button.dataset.active = String(!active);
+  button.textContent = active ? "Подписаться" : "Вы подписаны";
   const count = root.querySelector("[data-subscriber-count]");
   count.textContent = String(Number(count.textContent) + (active ? -1 : 1));
 });
@@ -82,6 +84,7 @@ document.querySelectorAll("[data-moderate-form]").forEach(form => form.addEventL
   if (response.ok) { row.remove(); toast("Решение сохранено"); } else toast("Не удалось сохранить решение");
 }));
 document.querySelectorAll("[data-user-row]").forEach(row => row.querySelector("[data-user-save]").addEventListener("click", async event => {
-  event.currentTarget.disabled = true; const response = await mutate(`/api/v1/admin/users/${row.dataset.userId}`, "PATCH", {role: row.querySelector("[data-role]").value, is_active: row.querySelector("[data-active]").checked});
-  toast(response.ok ? "Аккаунт обновлён" : response.status === 409 ? "Нельзя отключить последнего активного администратора" : "Не удалось обновить аккаунт"); event.currentTarget.disabled = false;
+  const button = event.currentTarget;
+  button.disabled = true; const response = await mutate(`/api/v1/admin/users/${row.dataset.userId}`, "PATCH", {role: row.querySelector("[data-role]").value, is_active: row.querySelector("[data-active]").checked});
+  toast(response.ok ? "Аккаунт обновлён" : response.status === 409 ? "Нельзя отключить последнего активного администратора" : "Не удалось обновить аккаунт"); button.disabled = false;
 }));
