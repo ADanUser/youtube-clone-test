@@ -1,13 +1,19 @@
 name: youtube-copy
 
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 x-app-environment: &app-environment
   YOUTUBE_ENVIRONMENT: production
   YOUTUBE_DEBUG: "false"
   YOUTUBE_DATABASE_URL: postgresql+asyncpg://youtube@postgres:5432/youtube
   YOUTUBE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  YOUTUBE_PUBLIC_ORIGIN: http://localhost:8080
+  YOUTUBE_PUBLIC_ORIGIN: ${YOUTUBE_PUBLIC_ORIGIN:-http://localhost:8080}
   YOUTUBE_TRUST_PROXY_HEADERS: "true"
-  YOUTUBE_COOKIE_SECURE: "false"
+  YOUTUBE_COOKIE_SECURE: ${YOUTUBE_COOKIE_SECURE:-false}
   YOUTUBE_AUTH_SECRET_FILE: /run/secrets/app_secret
   YOUTUBE_S3_ENDPOINT_URL: http://garage:3900
   YOUTUBE_S3_REGION: garage
@@ -31,6 +37,7 @@ x-app-base: &app-base
     - s3_credentials:/run/youtube-s3:ro
   networks:
     - backend
+  logging: *default-logging
 
 services:
   postgres:
@@ -52,6 +59,7 @@ services:
       start_period: 10s
     networks:
       - backend
+    logging: *default-logging
 
   garage:
     image: dxflrs/garage:v2.5.0@sha256:677e5b758e4425a325b811c425c026bf35a4bf42f7ddbaa773de3f4fd779a5a5
@@ -75,6 +83,7 @@ services:
       start_period: 5s
     networks:
       - backend
+    logging: *default-logging
 
   garage-init:
     build:
@@ -106,6 +115,7 @@ services:
         condition: service_started
     networks:
       - backend
+    logging: *default-logging
 
   migrate:
     <<: *app-base
@@ -190,7 +200,7 @@ services:
     image: nginx:1.31.8-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${YOUTUBE_HTTP_BIND:-8080}:8080"
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -199,6 +209,7 @@ services:
     networks:
       - frontend
       - backend
+    logging: *default-logging
 
 secrets:
   app_secret:
